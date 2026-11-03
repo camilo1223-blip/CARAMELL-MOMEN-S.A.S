@@ -1,0 +1,39 @@
+
+name: Extraer proyecto CARAMELL MOMEN
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  extraer:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Extraer proyecto
+        run: |
+          ZIP="CARAMELL_MOMEN_GITHUB_VERCEL_LIMPIO.zip"
+
+          if [ -f "$ZIP" ]; then
+            mkdir -p /tmp/caramell
+            unzip -o "$ZIP" -d /tmp/caramell
+
+            cp -a /tmp/caramell/CARAMELL_MOMEN_GITHUB_VERCEL/caramell_momen/. .
+
+            rm "$ZIP"
+
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+            git add -A
+            git commit -m "Extraer sistema completo CARAMELL MOMEN" || true
+            git push
+          else
+            echo "No se encontró el archivo ZIP."
+          fi
