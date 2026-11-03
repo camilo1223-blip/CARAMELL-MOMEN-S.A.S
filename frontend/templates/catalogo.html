@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+
+{% block title %}Catálogo de Confitería • CARAMELL MOMEN S.A.S.{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
+
+    <!-- ENCABEZADO DE CATÁLOGO -->
+    <div class="text-center space-y-3 max-w-2xl mx-auto">
+        <span class="text-xs font-bold uppercase tracking-widest text-pink-600">Catálogo Completo</span>
+        <h1 class="font-display font-bold text-4xl text-[#3D2314]">
+            Endulza tus días con nuestra selección
+        </h1>
+        <p class="text-sm text-gray-600">
+            Filtra por categorías, rangos de precio o busca el dulce de tus sueños. Los precios y existencias se actualizan en tiempo real.
+        </p>
+    </div>
+
+    <!-- BARRA DE FILTROS Y CONTROLES -->
+    <div class="bg-white p-6 rounded-3xl border border-pink-100 shadow-sm space-y-6">
+        
+        <!-- Fila 1: Buscador y Filtro de Stock -->
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+            
+            <div class="md:col-span-8 relative">
+                <input type="text" id="filtro-busqueda" placeholder="Buscar por nombre, sabor o ingrediente..." 
+                       class="w-full pl-11 pr-4 py-3 rounded-2xl bg-pink-50/50 border border-pink-200/80 focus:outline-none focus:ring-2 focus:ring-pink-400 focus:bg-white text-sm transition-all">
+                <i data-lucide="search" class="w-4 h-4 text-pink-400 absolute left-4 top-4"></i>
+            </div>
+
+            <div class="md:col-span-4 flex items-center justify-between md:justify-end gap-3">
+                <label class="flex items-center gap-2 cursor-pointer text-xs font-semibold text-[#3D2314]">
+                    <input type="checkbox" id="filtro-stock" class="rounded text-pink-600 focus:ring-pink-400 h-4 w-4">
+                    <span>Solo con stock disponible</span>
+                </label>
+                <button onclick="limpiarFiltros()" class="text-xs text-gray-500 hover:text-pink-600 underline font-medium">
+                    Limpiar
+                </button>
+            </div>
+
+        </div>
+
+        <!-- Fila 2: Chips de Categorías -->
+        <div>
+            <span class="text-[11px] font-bold uppercase tracking-wider text-gray-400 block mb-2.5">Categorías</span>
+            <div id="categorias-chips" class="flex flex-wrap gap-2">
+                <button onclick="seleccionarCategoria('')" data-cat="" class="cat-chip px-4 py-2 rounded-xl text-xs font-bold transition-all bg-pink-600 text-white shadow-sm shadow-pink-200">
+                    Todas las golosinas
+                </button>
+                <!-- Se llena con JS -->
+            </div>
+        </div>
+
+    </div>
+
+    <!-- RESULTADOS Y CONTEO -->
+    <div class="flex items-center justify-between text-xs text-gray-500 font-semibold px-2">
+        <span id="conteo-productos">Cargando productos del catálogo...</span>
+        <span>Precios en Pesos Colombianos (COP)</span>
+    </div>
+
+    <!-- GRID DE PRODUCTOS -->
+    <div id="productos-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <!-- Renderizado dinámico -->
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let categoriaActual = '';
+let searchParams = new URLSearchParams(window.location.search);
+
+document.addEventListener('DOMContentLoaded', async () => {
+    // Si viene categoria_id en URL
+    if (searchParams.get('categoria_id')) {
+        categoriaActual = searchParams.get('categoria_id');
+    }
+    // Si viene parametro q en URL
+    if (searchParams.get('q')) {
+        document.getElementById('filtro-busqueda').value = searchParams.get('q');
+    }
+
+    await cargarCategorias();
+    await cargarProductos();
+
+    // Eventos
+    document.getElementById('filtro-busqueda').addEventListener('input', debounce(cargarProductos, 300));
+    document.getElementById('filtro-stock').addEventListener('change', cargarProductos);
+});
+
+async function cargarCategorias() {
+    try {
+        const res = await fetch('/api/categorias');
+        const categorias = await res.json();
+        const chipsContainer = document.getElementById('categorias-chips');
+
+        categorias.forEach(cat => {
+            const btn = document.createElement('button');
+            const isActive = String(cat.id_categoria) === String(categoriaActual);
+            btn.className = `cat-chip px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                isActive ? 'bg-pink-600 text-white shadow-sm shadow-pink-200' : 'bg-pink-50 text-[#3D2314] hover:bg-pink-100'
+            }`;
+            btn.dataset.cat = cat.id_categoria;
+            btn.textContent = cat.nombre;
+            btn.onclick = () => seleccionarCategoria(cat.id_categoria);
+            chipsContainer.appendChild(btn);
+        });
+    } catch (err) {
+        console.error('Error al cargar categorías:', err);
+    }
+}
+
+function seleccionarCategoria(idCat) {
+    categoriaActual = idCat;
+    document.querySelectorAll('.cat-chip').forEach(btn => {
+        const match = String(btn.dataset.cat) === String(idCat);
+        btn.className = `cat-chip px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+            match ? 'bg-pink-600 text-white shadow-sm shadow-pink-200' : 'bg-pink-50 text-[#3D2314] hover:bg-pink-100'
+        }`;
+    });
+    cargarProductos();
+}
+
+function limpiarFiltros() {
+    document.getElementById('filtro-busqueda').value = '';
+    document.getElementById('filtro-stock').checked = false;
+    seleccionarCategoria('');
+}
+
+async function cargarProductos() {
+    const q = document.getElementById('filtro-busqueda').value.trim();
+    const inStock = document.getElementById('filtro-stock').checked;
+    const grid = document.getElementById('productos-grid');
+    const conteo = document.getElementById('conteo-productos');
+
+    let url = `/api/productos?`;
+    if (categoriaActual) url += `categoria_id=${encodeURIComponent(categoriaActual)}&`;
+    if (q) url += `q=${encodeURIComponent(q)}&`;
+    if (inStock) url += `in_stock=true&`;
+
+    try {
+        const res = await fetch(url);
+        const productos = await res.json();
+
+        conteo.textContent = `Mostrando ${productos.length} producto(s) en catálogo`;
+
+        if (productos.length === 0) {
+            grid.innerHTML = `
+                <div class="col-span-full py-16 text-center space-y-4">
+                    <span class="text-5xl">🍭</span>
+                    <h3 class="font-display font-bold text-xl text-[#3D2314]">No encontramos productos con estos filtros</h3>
+                    <p class="text-xs text-gray-500 max-w-md mx-auto">
+                        Intenta con otra palabra clave o pregúntale a <strong>Caramell Assistant</strong> para que te recomiende alternativas.
+                    </p>
+                    <button onclick="limpiarFiltros()" class="px-5 py-2.5 rounded-xl bg-pink-600 text-white font-bold text-xs shadow-md">
+                        Restablecer filtros
+                    </button>
+                </div>
+            `;
+            return;
+        }
+
+        grid.innerHTML = productos.map(p => `
+            <div class="candy-card bg-white rounded-3xl border border-pink-100 overflow-hidden flex flex-col justify-between shadow-sm">
+                <div class="relative overflow-hidden group">
+                    <img src="${p.imagen_url || 'https://images.unsplash.com/photo-1582058091505-f87a2e55a40f?w=600&auto=format&fit=crop&q=80'}" 
+                         alt="${escapeHTML(p.nombre)}" 
+                         class="w-full h-44 object-cover group-hover:scale-105 transition-transform duration-500">
+                    <span class="absolute top-3 left-3 bg-white/90 backdrop-blur-md text-pink-700 text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-sm">
+                        ${escapeHTML(p.categoria)}
+                    </span>
+                    <span class="absolute top-3 right-3 ${p.stock > 0 ? 'bg-[#3D2314]/80' : 'bg-rose-600'} backdrop-blur-md text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">
+                        ${p.stock > 0 ? `Stock: ${p.stock}` : 'Agotado'}
+                    </span>
+                </div>
+
+                <div class="p-4 flex-1 flex flex-col justify-between space-y-3">
+                    <div>
+                        <h3 class="font-display font-bold text-base text-[#3D2314] line-clamp-1">
+                            ${escapeHTML(p.nombre)}
+                        </h3>
+                        <p class="text-[11px] text-gray-500 line-clamp-2 mt-1 leading-relaxed">
+                            ${escapeHTML(p.descripcion || 'Golosina de alta calidad.')}
+                        </p>
+                    </div>
+
+                    <div class="pt-3 border-t border-pink-50 flex items-center justify-between">
+                        <div>
+                            <span class="font-display font-extrabold text-lg text-pink-600">
+                                ${formatCOP(p.precio)}
+                            </span>
+                        </div>
+
+                        <div class="flex items-center gap-1.5">
+                            <a href="/producto/${p.id_producto}" class="p-2 rounded-xl bg-pink-50 hover:bg-pink-100 text-pink-700 transition-colors" title="Detalle">
+                                <i data-lucide="eye" class="w-4 h-4"></i>
+                            </a>
+                            <button onclick="CartManager.addItem(${JSON.stringify(p).replace(/"/g, '&quot;')}, 1)" 
+                                    class="px-3 py-2 rounded-xl ${p.stock > 0 ? 'bg-pink-600 hover:bg-pink-700 text-white' : 'bg-gray-200 text-gray-400 cursor-not-allowed'} font-bold text-xs shadow-sm transition-all"
+                                    ${p.stock <= 0 ? 'disabled' : ''}>
+                                ${p.stock > 0 ? 'Agregar' : 'Sin stock'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+
+        lucide.createIcons();
+    } catch (err) {
+        console.error('Error al cargar productos:', err);
+    }
+}
+
+function debounce(fn, delay) {
+    let timer;
+    return (...args) => {
+        clearTimeout(timer);
+        timer = setTimeout(() => fn(...args), delay);
+    };
+}
+</script>
+{% endblock %}

@@ -1,0 +1,566 @@
+{% extends "base.html" %}
+
+{% block title %}Panel Administrativo • CARAMELL MOMEN S.A.S.{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
+
+    <!-- ENCABEZADO PANEL -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-pink-100">
+        <div>
+            <div class="flex items-center gap-2">
+                <span class="px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-bold">Módulo Administrativo</span>
+                <span class="text-xs text-gray-400">• Control Centralizado</span>
+            </div>
+            <h1 class="font-display font-extrabold text-3xl text-[#3D2314] mt-1">
+                Panel de Control Caramell Momen
+            </h1>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <button onclick="abrirModalMovimiento()" class="px-4 py-2.5 rounded-xl bg-pink-600 hover:bg-pink-700 text-white font-bold text-xs shadow-md shadow-pink-200 transition-all flex items-center gap-2">
+                <i data-lucide="package-plus" class="w-4 h-4"></i>
+                <span>Registrar Movimiento Stock</span>
+            </button>
+            <button onclick="abrirModalNuevoProducto()" class="px-4 py-2.5 rounded-xl bg-[#3D2314] hover:bg-gray-800 text-white font-bold text-xs shadow-md transition-all flex items-center gap-2">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+                <span>Nuevo Producto</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- TARJETAS DE MÉTRICAS GLOBALES (KPIs) -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div class="bg-white p-6 rounded-3xl border border-pink-100 shadow-sm flex items-center gap-4">
+            <div class="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center text-2xl">
+                💰
+            </div>
+            <div>
+                <span class="text-[11px] font-bold uppercase tracking-wider text-gray-400">Ventas Registradas</span>
+                <p id="kpi-ventas" class="font-display font-extrabold text-2xl text-[#3D2314]">$0</p>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-3xl border border-pink-100 shadow-sm flex items-center gap-4">
+            <div class="w-12 h-12 rounded-2xl bg-pink-100 text-pink-700 flex items-center justify-center text-2xl">
+                📦
+            </div>
+            <div>
+                <span class="text-[11px] font-bold uppercase tracking-wider text-gray-400">Pedidos Totales</span>
+                <p id="kpi-pedidos" class="font-display font-extrabold text-2xl text-[#3D2314]">0</p>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-3xl border border-pink-100 shadow-sm flex items-center gap-4">
+            <div class="w-12 h-12 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center text-2xl">
+                👥
+            </div>
+            <div>
+                <span class="text-[11px] font-bold uppercase tracking-wider text-gray-400">Clientes Registrados</span>
+                <p id="kpi-clientes" class="font-display font-extrabold text-2xl text-[#3D2314]">0</p>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-3xl border border-pink-100 shadow-sm flex items-center gap-4">
+            <div class="w-12 h-12 rounded-2xl bg-purple-100 text-purple-800 flex items-center justify-center text-2xl">
+                🍬
+            </div>
+            <div>
+                <span class="text-[11px] font-bold uppercase tracking-wider text-gray-400">Dulces Activos</span>
+                <p id="kpi-articulos" class="font-display font-extrabold text-2xl text-[#3D2314]">0</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- PESTAÑAS DE NAVEGACIÓN -->
+    <div class="flex border-b border-pink-100 space-x-4">
+        <button onclick="cambiarTab('productos')" id="tab-btn-productos" class="tab-btn pb-3 px-2 text-xs font-bold border-b-2 border-pink-600 text-pink-600 transition-all flex items-center gap-2">
+            <i data-lucide="layers" class="w-4 h-4"></i>
+            <span>Inventario & Productos</span>
+        </button>
+        <button onclick="cambiarTab('pedidos')" id="tab-btn-pedidos" class="tab-btn pb-3 px-2 text-xs font-bold border-b-2 border-transparent text-gray-500 hover:text-pink-600 transition-all flex items-center gap-2">
+            <i data-lucide="truck" class="w-4 h-4"></i>
+            <span>Gestión de Pedidos</span>
+        </button>
+        <button onclick="cambiarTab('movimientos')" id="tab-btn-movimientos" class="tab-btn pb-3 px-2 text-xs font-bold border-b-2 border-transparent text-gray-500 hover:text-pink-600 transition-all flex items-center gap-2">
+            <i data-lucide="history" class="w-4 h-4"></i>
+            <span>Movimientos de Stock</span>
+        </button>
+        <button onclick="cambiarTab('reportes')" id="tab-btn-reportes" class="tab-btn pb-3 px-2 text-xs font-bold border-b-2 border-transparent text-gray-500 hover:text-pink-600 transition-all flex items-center gap-2">
+            <i data-lucide="bar-chart-2" class="w-4 h-4"></i>
+            <span>Reportes & Ventas</span>
+        </button>
+    </div>
+
+    <!-- TAB 1: PRODUCTOS E INVENTARIO -->
+    <div id="tab-content-productos" class="space-y-6">
+        <div class="bg-white rounded-3xl border border-pink-100 shadow-sm overflow-hidden">
+            <div class="p-6 border-b border-pink-100 flex items-center justify-between">
+                <h3 class="font-bold text-base text-[#3D2314]">Catálogo de Productos y Existencias</h3>
+                <span class="text-xs text-gray-400">Actualizado en tiempo real</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-pink-50/50 text-gray-500 font-bold uppercase tracking-wider text-[10px]">
+                        <tr>
+                            <th class="py-3.5 px-6">ID</th>
+                            <th class="py-3.5 px-6">Producto</th>
+                            <th class="py-3.5 px-6">Categoría</th>
+                            <th class="py-3.5 px-6">Precio Unitario</th>
+                            <th class="py-3.5 px-6">Stock Actual</th>
+                            <th class="py-3.5 px-6">Estado</th>
+                            <th class="py-3.5 px-6 text-right">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-admin-productos" class="divide-y divide-pink-50">
+                        <!-- JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 2: PEDIDOS -->
+    <div id="tab-content-pedidos" class="hidden space-y-6">
+        <div class="bg-white rounded-3xl border border-pink-100 shadow-sm overflow-hidden">
+            <div class="p-6 border-b border-pink-100 flex items-center justify-between">
+                <h3 class="font-bold text-base text-[#3D2314]">Historial de Compras de la Tienda</h3>
+                <span class="text-xs text-gray-400">Actualiza estados de despacho y entrega</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-pink-50/50 text-gray-500 font-bold uppercase tracking-wider text-[10px]">
+                        <tr>
+                            <th class="py-3.5 px-6">ID</th>
+                            <th class="py-3.5 px-6">Cliente</th>
+                            <th class="py-3.5 px-6">Fecha</th>
+                            <th class="py-3.5 px-6">Total</th>
+                            <th class="py-3.5 px-6">Estado Actual</th>
+                            <th class="py-3.5 px-6 text-right">Modificar Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-admin-pedidos" class="divide-y divide-pink-50">
+                        <!-- JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 3: MOVIMIENTOS DE STOCK -->
+    <div id="tab-content-movimientos" class="hidden space-y-6">
+        <div class="bg-white rounded-3xl border border-pink-100 shadow-sm overflow-hidden">
+            <div class="p-6 border-b border-pink-100 flex items-center justify-between">
+                <h3 class="font-bold text-base text-[#3D2314]">Kardex y Trazabilidad de Inventario</h3>
+                <span class="text-xs text-gray-400">Registro inmutable de entradas, salidas y ajustes</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-pink-50/50 text-gray-500 font-bold uppercase tracking-wider text-[10px]">
+                        <tr>
+                            <th class="py-3.5 px-6">ID</th>
+                            <th class="py-3.5 px-6">Fecha / Hora</th>
+                            <th class="py-3.5 px-6">Producto</th>
+                            <th class="py-3.5 px-6">Tipo</th>
+                            <th class="py-3.5 px-6">Cantidad</th>
+                            <th class="py-3.5 px-6">Responsable</th>
+                            <th class="py-3.5 px-6">Motivo</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-admin-movimientos" class="divide-y divide-pink-50">
+                        <!-- JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 4: REPORTES -->
+    <div id="tab-content-reportes" class="hidden space-y-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            
+            <!-- Top 5 Productos Más Vendidos -->
+            <div class="bg-white p-6 rounded-3xl border border-pink-100 shadow-sm space-y-4">
+                <div class="flex items-center gap-2">
+                    <span class="text-xl">🏆</span>
+                    <h3 class="font-bold text-sm text-[#3D2314]">Productos Más Vendidos</h3>
+                </div>
+                <div id="top-productos-container" class="space-y-3 text-xs">
+                    <!-- JS -->
+                </div>
+            </div>
+
+            <!-- Alerta de Pocas Existencias -->
+            <div class="bg-white p-6 rounded-3xl border border-pink-100 shadow-sm space-y-4">
+                <div class="flex items-center gap-2">
+                    <span class="text-xl">⚠️</span>
+                    <h3 class="font-bold text-sm text-[#3D2314]">Pocas Existencias (Stock Crítico ≤ 20)</h3>
+                </div>
+                <div id="pocas-existencias-container" class="space-y-3 text-xs">
+                    <!-- JS -->
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+<!-- MODAL: REGISTRAR MOVIMIENTO INVENTARIO -->
+<div id="modal-movimiento" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
+        <div class="flex items-center justify-between pb-3 border-b border-pink-100">
+            <h3 class="font-bold text-sm text-[#3D2314]">Registrar Movimiento de Inventario</h3>
+            <button onclick="cerrarModalMovimiento()" class="text-gray-400 hover:text-gray-600">✕</button>
+        </div>
+        <form id="form-movimiento" class="space-y-3 text-xs">
+            <div>
+                <label class="block font-bold mb-1">Producto</label>
+                <select id="mov-producto" required class="w-full px-3 py-2 rounded-xl bg-pink-50/50 border border-pink-200"></select>
+            </div>
+            <div>
+                <label class="block font-bold mb-1">Tipo de Movimiento</label>
+                <select id="mov-tipo" required class="w-full px-3 py-2 rounded-xl bg-pink-50/50 border border-pink-200">
+                    <option value="entrada">Entrada (Reposición de mercancía)</option>
+                    <option value="salida">Salida (Merma o retiro autorizado)</option>
+                    <option value="ajuste">Ajuste (Conteo físico total)</option>
+                </select>
+            </div>
+            <div>
+                <label class="block font-bold mb-1">Cantidad</label>
+                <input type="number" id="mov-cantidad" min="1" required class="w-full px-3 py-2 rounded-xl bg-pink-50/50 border border-pink-200">
+            </div>
+            <div>
+                <label class="block font-bold mb-1">Motivo / Justificación</label>
+                <input type="text" id="mov-motivo" required placeholder="Ej. Llegada de lote proveedor #884" class="w-full px-3 py-2 rounded-xl bg-pink-50/50 border border-pink-200">
+            </div>
+            <div class="pt-3 flex gap-2">
+                <button type="button" onclick="cerrarModalMovimiento()" class="flex-1 py-2.5 rounded-xl bg-gray-100 font-bold">Cancelar</button>
+                <button type="submit" class="flex-1 py-2.5 rounded-xl bg-pink-600 text-white font-bold shadow-md">Registrar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL: NUEVO PRODUCTO -->
+<div id="modal-nuevo-producto" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
+        <div class="flex items-center justify-between pb-3 border-b border-pink-100">
+            <h3 class="font-bold text-sm text-[#3D2314]">Crear Nuevo Dulce en Catálogo</h3>
+            <button onclick="cerrarModalNuevoProducto()" class="text-gray-400 hover:text-gray-600">✕</button>
+        </div>
+        <form id="form-nuevo-producto" class="space-y-3 text-xs">
+            <div>
+                <label class="block font-bold mb-1">Nombre Comercial</label>
+                <input type="text" id="new-prod-nombre" required class="w-full px-3 py-2 rounded-xl bg-pink-50/50 border border-pink-200">
+            </div>
+            <div>
+                <label class="block font-bold mb-1">Categoría</label>
+                <select id="new-prod-categoria" required class="w-full px-3 py-2 rounded-xl bg-pink-50/50 border border-pink-200"></select>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block font-bold mb-1">Precio (COP)</label>
+                    <input type="number" id="new-prod-precio" min="100" step="50" required class="w-full px-3 py-2 rounded-xl bg-pink-50/50 border border-pink-200">
+                </div>
+                <div>
+                    <label class="block font-bold mb-1">Stock Inicial</label>
+                    <input type="number" id="new-prod-stock" min="0" required class="w-full px-3 py-2 rounded-xl bg-pink-50/50 border border-pink-200">
+                </div>
+            </div>
+            <div>
+                <label class="block font-bold mb-1">Descripción</label>
+                <textarea id="new-prod-desc" rows="2" class="w-full px-3 py-2 rounded-xl bg-pink-50/50 border border-pink-200"></textarea>
+            </div>
+            <div>
+                <label class="block font-bold mb-1">URL de Imagen (Opcional)</label>
+                <input type="url" id="new-prod-img" placeholder="https://..." class="w-full px-3 py-2 rounded-xl bg-pink-50/50 border border-pink-200">
+            </div>
+            <div class="pt-3 flex gap-2">
+                <button type="button" onclick="cerrarModalNuevoProducto()" class="flex-1 py-2.5 rounded-xl bg-gray-100 font-bold">Cancelar</button>
+                <button type="submit" class="flex-1 py-2.5 rounded-xl bg-pink-600 text-white font-bold shadow-md">Guardar</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let productosGlobal = [];
+let categoriasGlobal = [];
+
+document.addEventListener('DOMContentLoaded', async () => {
+    await cargarDatosAdmin();
+
+    document.getElementById('form-movimiento').addEventListener('submit', guardarMovimiento);
+    document.getElementById('form-nuevo-producto').addEventListener('submit', guardarNuevoProducto);
+});
+
+async function cargarDatosAdmin() {
+    try {
+        // Cargar Reportes
+        const resRep = await fetch('/api/admin/reportes');
+        if (!resRep.ok) {
+            window.location.href = '/login';
+            return;
+        }
+        const dataRep = await resRep.json();
+        if (dataRep.success) {
+            document.getElementById('kpi-ventas').textContent = formatCOP(dataRep.metricas.total_ventas);
+            document.getElementById('kpi-pedidos').textContent = dataRep.metricas.total_pedidos;
+            document.getElementById('kpi-clientes').textContent = dataRep.metricas.total_clientes;
+            document.getElementById('kpi-articulos').textContent = dataRep.metricas.total_articulos;
+
+            // Renderizar Top Productos
+            const topBox = document.getElementById('top-productos-container');
+            topBox.innerHTML = dataRep.top_productos.length > 0 
+                ? dataRep.top_productos.map(tp => `
+                    <div class="flex items-center justify-between p-2.5 bg-pink-50/50 rounded-xl">
+                        <span class="font-bold text-[#3D2314]">${escapeHTML(tp.nombre)}</span>
+                        <span class="text-pink-600 font-extrabold">${tp.unidades} uds. (${formatCOP(tp.total)})</span>
+                    </div>
+                `).join('')
+                : '<p class="text-gray-400">Sin ventas completadas aún</p>';
+
+            // Renderizar Pocas Existencias
+            const pocasBox = document.getElementById('pocas-existencias-container');
+            pocasBox.innerHTML = dataRep.pocas_existencias.length > 0
+                ? dataRep.pocas_existencias.map(pe => `
+                    <div class="flex items-center justify-between p-2.5 bg-rose-50 rounded-xl text-rose-800">
+                        <span class="font-bold">${escapeHTML(pe.nombre)}</span>
+                        <span class="px-2 py-0.5 rounded-full bg-rose-200 text-[10px] font-extrabold">Quedan ${pe.stock} uds</span>
+                    </div>
+                `).join('')
+                : '<p class="text-emerald-600">Todo el inventario cuenta con stock óptimo.</p>';
+        }
+
+        // Cargar Productos
+        const resProd = await fetch('/api/productos');
+        productosGlobal = await resProd.json();
+        renderTablaProductos(productosGlobal);
+
+        // Cargar Categorías
+        const resCat = await fetch('/api/categorias');
+        categoriasGlobal = await resCat.json();
+        llenarSelectCategorias(categoriasGlobal);
+
+        // Cargar Pedidos
+        const resPed = await fetch('/api/admin/pedidos');
+        const pedidos = await resPed.json();
+        renderTablaPedidos(pedidos);
+
+        // Cargar Movimientos
+        const resMov = await fetch('/api/admin/inventario/movimientos');
+        const movimientos = await resMov.json();
+        renderTablaMovimientos(movimientos);
+
+        lucide.createIcons();
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+function cambiarTab(tab) {
+    ['productos', 'pedidos', 'movimientos', 'reportes'].forEach(t => {
+        const btn = document.getElementById(`tab-btn-${t}`);
+        const content = document.getElementById(`tab-content-${t}`);
+        if (t === tab) {
+            btn.className = 'tab-btn pb-3 px-2 text-xs font-bold border-b-2 border-pink-600 text-pink-600 transition-all flex items-center gap-2';
+            content.classList.remove('hidden');
+        } else {
+            btn.className = 'tab-btn pb-3 px-2 text-xs font-bold border-b-2 border-transparent text-gray-500 hover:text-pink-600 transition-all flex items-center gap-2';
+            content.classList.add('hidden');
+        }
+    });
+}
+
+function renderTablaProductos(prods) {
+    const tbody = document.getElementById('tabla-admin-productos');
+    tbody.innerHTML = prods.map(p => `
+        <tr class="hover:bg-pink-50/40">
+            <td class="py-3 px-6 font-mono font-bold text-gray-400">#${p.id_producto}</td>
+            <td class="py-3 px-6 font-bold text-[#3D2314]">${escapeHTML(p.nombre)}</td>
+            <td class="py-3 px-6">${escapeHTML(p.categoria)}</td>
+            <td class="py-3 px-6 font-bold text-pink-600">${formatCOP(p.precio)}</td>
+            <td class="py-3 px-6">
+                <span class="px-2.5 py-0.5 rounded-full font-bold ${p.stock <= 15 ? 'bg-rose-100 text-rose-800' : 'bg-emerald-100 text-emerald-800'}">
+                    ${p.stock} uds
+                </span>
+            </td>
+            <td class="py-3 px-6">
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${p.activo ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-600'}">
+                    ${p.activo ? 'Activo' : 'Desactivado'}
+                </span>
+            </td>
+            <td class="py-3 px-6 text-right space-x-2">
+                <button onclick="desactivarProducto(${p.id_producto})" class="text-rose-600 hover:underline font-bold">
+                    Desactivar
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function renderTablaPedidos(pedidos) {
+    const tbody = document.getElementById('tabla-admin-pedidos');
+    const estados = ['Pendiente de pago', 'Pagado', 'En preparación', 'Listo para entrega', 'Enviado', 'Entregado', 'Cancelado'];
+
+    tbody.innerHTML = pedidos.map(p => `
+        <tr class="hover:bg-pink-50/40">
+            <td class="py-3 px-6 font-mono font-bold text-gray-400">#${p.id_pedido}</td>
+            <td class="py-3 px-6 font-bold text-[#3D2314]">${escapeHTML(p.cliente_nombre)}<br><span class="text-[10px] text-gray-400 font-normal">${p.cliente_correo}</span></td>
+            <td class="py-3 px-6 text-gray-500">${p.fecha_pedido}</td>
+            <td class="py-3 px-6 font-bold text-pink-600">${formatCOP(p.total)}</td>
+            <td class="py-3 px-6">
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-pink-100 text-pink-800">
+                    ${p.estado}
+                </span>
+            </td>
+            <td class="py-3 px-6 text-right">
+                <select onchange="cambiarEstadoPedido(${p.id_pedido}, this.value)" class="px-2 py-1 bg-white border border-pink-200 rounded-lg text-xs">
+                    ${estados.map(e => `<option value="${e}" ${e === p.estado ? 'selected' : ''}>${e}</option>`).join('')}
+                </select>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function renderTablaMovimientos(movs) {
+    const tbody = document.getElementById('tabla-admin-movimientos');
+    tbody.innerHTML = movs.map(m => {
+        const badges = {
+            'entrada': 'bg-emerald-100 text-emerald-800',
+            'salida': 'bg-rose-100 text-rose-800',
+            'ajuste': 'bg-blue-100 text-blue-800'
+        };
+        return `
+            <tr class="hover:bg-pink-50/40">
+                <td class="py-3 px-6 font-mono font-bold text-gray-400">#${m.id_movimiento}</td>
+                <td class="py-3 px-6 text-gray-500">${m.fecha_movimiento}</td>
+                <td class="py-3 px-6 font-bold text-[#3D2314]">${escapeHTML(m.producto_nombre)}</td>
+                <td class="py-3 px-6">
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${badges[m.tipo_movimiento] || 'bg-gray-100'}">
+                        ${m.tipo_movimiento}
+                    </span>
+                </td>
+                <td class="py-3 px-6 font-bold">${m.cantidad} uds</td>
+                <td class="py-3 px-6 text-gray-600">${escapeHTML(m.usuario_nombre)}</td>
+                <td class="py-3 px-6 text-gray-500 italic">${escapeHTML(m.motivo)}</td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function llenarSelectCategorias(cats) {
+    const select = document.getElementById('new-prod-categoria');
+    if (select) {
+        select.innerHTML = cats.map(c => `<option value="${c.id_categoria}">${escapeHTML(c.nombre)}</option>`).join('');
+    }
+}
+
+function abrirModalMovimiento() {
+    const select = document.getElementById('mov-producto');
+    select.innerHTML = productosGlobal.map(p => `<option value="${p.id_producto}">${escapeHTML(p.nombre)} (Stock: ${p.stock})</option>`).join('');
+    document.getElementById('modal-movimiento').classList.remove('hidden');
+}
+function cerrarModalMovimiento() {
+    document.getElementById('modal-movimiento').classList.add('hidden');
+}
+
+function abrirModalNuevoProducto() {
+    document.getElementById('modal-nuevo-producto').classList.remove('hidden');
+}
+function cerrarModalNuevoProducto() {
+    document.getElementById('modal-nuevo-producto').classList.add('hidden');
+}
+
+async function guardarMovimiento(e) {
+    e.preventDefault();
+    const id_producto = document.getElementById('mov-producto').value;
+    const tipo_movimiento = document.getElementById('mov-tipo').value;
+    const cantidad = document.getElementById('mov-cantidad').value;
+    const motivo = document.getElementById('mov-motivo').value.trim();
+
+    try {
+        const res = await fetch('/api/admin/inventario/movimiento', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id_producto, tipo_movimiento, cantidad, motivo })
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast(data.message, 'success');
+            cerrarModalMovimiento();
+            await cargarDatosAdmin();
+        } else {
+            showToast(data.message || 'Error al registrar', 'error');
+        }
+    } catch (err) {
+        showToast('Error de conexión', 'error');
+    }
+}
+
+async function guardarNuevoProducto(e) {
+    e.preventDefault();
+    const nombre = document.getElementById('new-prod-nombre').value.trim();
+    const id_categoria = document.getElementById('new-prod-categoria').value;
+    const precio = document.getElementById('new-prod-precio').value;
+    const stock = document.getElementById('new-prod-stock').value;
+    const descripcion = document.getElementById('new-prod-desc').value.trim();
+    const imagen_url = document.getElementById('new-prod-img').value.trim();
+
+    try {
+        const res = await fetch('/api/admin/productos', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nombre, id_categoria, precio, stock, descripcion, imagen_url })
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast('Producto agregado al catálogo', 'success');
+            cerrarModalNuevoProducto();
+            await cargarDatosAdmin();
+        } else {
+            showToast(data.message || 'Error al guardar', 'error');
+        }
+    } catch (err) {
+        showToast('Error de conexión', 'error');
+    }
+}
+
+async function cambiarEstadoPedido(id_pedido, nuevoEstado) {
+    try {
+        const res = await fetch(`/api/admin/pedidos/${id_pedido}/estado`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ estado: nuevoEstado })
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast(data.message, 'success');
+            await cargarDatosAdmin();
+        } else {
+            showToast(data.message || 'Error al cambiar estado', 'error');
+        }
+    } catch (err) {
+        showToast('Error de conexión', 'error');
+    }
+}
+
+async function desactivarProducto(id_producto) {
+    if (confirm('¿Deseas retirar este dulce del catálogo activo?')) {
+        try {
+            const res = await fetch(`/api/admin/productos/${id_producto}`, { method: 'DELETE' });
+            const data = await res.json();
+            if (data.success) {
+                showToast(data.message, 'info');
+                await cargarDatosAdmin();
+            }
+        } catch (err) {
+            showToast('Error de conexión', 'error');
+        }
+    }
+}
+</script>
+{% endblock %}

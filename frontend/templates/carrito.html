@@ -1,0 +1,252 @@
+{% extends "base.html" %}
+
+{% block title %}Carrito de Compras • CARAMELL MOMEN S.A.S.{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
+
+    <div class="space-y-2">
+        <span class="text-xs font-bold uppercase tracking-widest text-pink-600">Revisión de Compra</span>
+        <h1 class="font-display font-bold text-3xl sm:text-4xl text-[#3D2314]">
+            Tu Carrito Dulce
+        </h1>
+    </div>
+
+    <!-- Si el carrito está vacío -->
+    <div id="cart-empty-view" class="hidden bg-white rounded-3xl p-16 text-center border border-pink-100 space-y-4 max-w-xl mx-auto shadow-sm">
+        <span class="text-6xl inline-block">🛍️</span>
+        <h3 class="font-display font-bold text-xl text-[#3D2314]">Tu carrito está vacío</h3>
+        <p class="text-xs text-gray-500">
+            Aún no has seleccionado tus dulces favoritos. ¡Visita nuestro catálogo y llena tu día de dulzura!
+        </p>
+        <div class="pt-2">
+            <a href="{{ url_for('catalogo') }}" class="px-6 py-3 rounded-2xl bg-pink-600 hover:bg-pink-700 text-white font-bold text-xs shadow-md inline-block">
+                Explorar Catálogo
+            </a>
+        </div>
+    </div>
+
+    <!-- Contenido cuando hay productos -->
+    <div id="cart-content-view" class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <!-- Lista de Artículos (Izquierda) -->
+        <div class="lg:col-span-8 bg-white rounded-3xl p-6 sm:p-8 border border-pink-100 shadow-sm space-y-6">
+            <div class="flex items-center justify-between pb-4 border-b border-pink-100">
+                <h3 class="font-bold text-base text-[#3D2314]">Artículos Seleccionados</h3>
+                <button onclick="vaciarCarrito()" class="text-xs text-rose-600 hover:text-rose-700 font-semibold">
+                    Vaciar carrito
+                </button>
+            </div>
+
+            <div id="cart-items-container" class="divide-y divide-pink-50">
+                <!-- Se llena con JS -->
+            </div>
+        </div>
+
+        <!-- Resumen y Checkout (Derecha) -->
+        <div class="lg:col-span-4 space-y-6">
+            
+            <div class="bg-white rounded-3xl p-6 sm:p-8 border border-pink-100 shadow-sm space-y-6 sticky top-28">
+                <h3 class="font-display font-bold text-lg text-[#3D2314]">Resumen del Pedido</h3>
+
+                <div class="space-y-3 text-xs">
+                    <div class="flex justify-between text-gray-600">
+                        <span>Subtotal de golosinas:</span>
+                        <span id="summary-subtotal" class="font-bold text-[#3D2314]">$0 COP</span>
+                    </div>
+                    <div class="flex justify-between text-gray-600">
+                        <span>Costo de envío:</span>
+                        <span id="summary-shipping" class="font-bold text-emerald-600">Gratis</span>
+                    </div>
+                    <div class="pt-3 border-t border-pink-100 flex justify-between items-baseline">
+                        <span class="font-bold text-sm text-[#3D2314]">Total a Pagar:</span>
+                        <span id="summary-total" class="font-display font-extrabold text-2xl text-pink-600">$0 COP</span>
+                    </div>
+                </div>
+
+                <!-- FORMULARIO DE DESPACHO Y PAGO -->
+                <form id="checkout-form" class="space-y-4 pt-4 border-t border-pink-100">
+                    
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">Dirección de Entrega</label>
+                        <input type="text" id="order-address" required placeholder="Ej. Calle 72 # 45-20, Barranquilla"
+                               class="w-full px-3.5 py-2.5 rounded-xl bg-pink-50/50 border border-pink-200 text-xs focus:bg-white focus:ring-2 focus:ring-pink-400 focus:outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 mb-1">Pasarela de Pago (Simulación)</label>
+                        <select id="order-payment" class="w-full px-3.5 py-2.5 rounded-xl bg-pink-50/50 border border-pink-200 text-xs focus:bg-white focus:outline-none">
+                            <option value="Wompi Colombia (Bancolombia, Nequi, PSE)">Wompi Colombia (Bancolombia, Nequi, PSE)</option>
+                            <option value="Mercado Pago Colombia">Mercado Pago Colombia</option>
+                            <option value="Tarjeta de Crédito / Débito">Tarjeta de Crédito / Débito</option>
+                        </select>
+                    </div>
+
+                    <!-- Botón de Confirmación -->
+                    <button type="submit" id="btn-confirm-order" class="w-full py-4 rounded-2xl bg-pink-600 hover:bg-pink-700 text-white font-bold text-xs uppercase tracking-wider shadow-xl shadow-pink-200 transition-all flex items-center justify-center gap-2">
+                        <i data-lucide="lock" class="w-4 h-4"></i>
+                        <span>Confirmar y Pagar Pedido</span>
+                    </button>
+
+                    <div id="auth-alert" class="hidden p-3 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-800">
+                        ⚠️ Debes <a href="/login" class="font-bold underline">iniciar sesión</a> para completar la compra de tu pedido.
+                    </div>
+                </form>
+
+                <div class="text-[10px] text-gray-400 text-center space-y-1">
+                    <p>🔒 Transacción segura con encriptación SSL</p>
+                    <p>Verificación de precios e inventario en el servidor</p>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentUser = null;
+
+document.addEventListener('DOMContentLoaded', async () => {
+    await checkUserAuth();
+    renderCart();
+
+    document.getElementById('checkout-form').addEventListener('submit', procesarCompra);
+});
+
+async function checkUserAuth() {
+    try {
+        const res = await fetch('/api/auth/me');
+        const data = await res.json();
+        if (data.authenticated) {
+            currentUser = data.usuario;
+            document.getElementById('auth-alert').classList.add('hidden');
+        } else {
+            currentUser = null;
+            document.getElementById('auth-alert').classList.remove('hidden');
+        }
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+function renderCart() {
+    const cart = CartManager.getCart();
+    const emptyView = document.getElementById('cart-empty-view');
+    const contentView = document.getElementById('cart-content-view');
+    const container = document.getElementById('cart-items-container');
+
+    if (cart.length === 0) {
+        emptyView.classList.remove('hidden');
+        contentView.classList.add('hidden');
+        return;
+    }
+
+    emptyView.classList.add('hidden');
+    contentView.classList.remove('hidden');
+
+    container.innerHTML = cart.map(item => `
+        <div class="py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-4 w-full sm:w-auto">
+                <img src="${item.imagen_url || 'https://images.unsplash.com/photo-1582058091505-f87a2e55a40f?w=400'}" 
+                     alt="${escapeHTML(item.nombre)}" class="w-16 h-16 rounded-2xl object-cover shrink-0">
+                <div>
+                    <h4 class="font-bold text-sm text-[#3D2314]">${escapeHTML(item.nombre)}</h4>
+                    <span class="text-xs text-pink-600 font-bold">${formatCOP(item.precio)} c/u</span>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between w-full sm:w-auto gap-6">
+                <!-- Control de cantidad -->
+                <div class="flex items-center border border-pink-200 rounded-xl bg-pink-50/50 p-1">
+                    <button onclick="CartManager.updateQuantity(${item.id_producto}, ${item.cantidad - 1}); renderCart();" 
+                            class="w-7 h-7 rounded-lg bg-white text-xs font-bold hover:bg-pink-100 flex items-center justify-center">-</button>
+                    <span class="w-10 text-center font-bold text-xs">${item.cantidad}</span>
+                    <button onclick="CartManager.updateQuantity(${item.id_producto}, ${item.cantidad + 1}); renderCart();" 
+                            class="w-7 h-7 rounded-lg bg-white text-xs font-bold hover:bg-pink-100 flex items-center justify-center">+</button>
+                </div>
+
+                <div class="text-right">
+                    <span class="text-xs text-gray-400 block font-medium">Subtotal</span>
+                    <span class="font-bold text-sm text-[#3D2314]">${formatCOP(item.precio * item.cantidad)}</span>
+                </div>
+
+                <button onclick="CartManager.removeItem(${item.id_producto}); renderCart();" class="text-gray-400 hover:text-rose-600 transition-colors p-1" title="Eliminar">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+    `).join('');
+
+    const total = CartManager.getTotal();
+    document.getElementById('summary-subtotal').textContent = formatCOP(total);
+    document.getElementById('summary-total').textContent = formatCOP(total);
+
+    lucide.createIcons();
+}
+
+function vaciarCarrito() {
+    if (confirm('¿Deseas vaciar todos los productos del carrito?')) {
+        CartManager.clearCart();
+        renderCart();
+    }
+}
+
+async function procesarCompra(e) {
+    e.preventDefault();
+
+    if (!currentUser) {
+        showToast('Debes iniciar sesión para completar la compra', 'warning');
+        setTimeout(() => window.location.href = '/login', 1000);
+        return;
+    }
+
+    const cart = CartManager.getCart();
+    if (cart.length === 0) {
+        showToast('El carrito está vacío', 'error');
+        return;
+    }
+
+    const direccion = document.getElementById('order-address').value.trim();
+    const metodoPago = document.getElementById('order-payment').value;
+    const btn = document.getElementById('btn-confirm-order');
+
+    btn.disabled = true;
+    btn.innerHTML = '<span>Procesando pago...</span>';
+
+    try {
+        const response = await fetch('/api/pedidos/crear', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                items: cart,
+                direccion_entrega: direccion,
+                metodo_pago: metodoPago
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            CartManager.clearCart();
+            showToast('¡Compra realizada con éxito!', 'success');
+            setTimeout(() => {
+                window.location.href = '/pedidos';
+            }, 1200);
+        } else {
+            showToast(data.message || 'Error al procesar la compra', 'error');
+            btn.disabled = false;
+            btn.innerHTML = '<i data-lucide="lock" class="w-4 h-4"></i><span>Confirmar y Pagar Pedido</span>';
+            lucide.createIcons();
+        }
+    } catch (err) {
+        console.error(err);
+        showToast('Error de conexión con el servidor', 'error');
+        btn.disabled = false;
+    }
+}
+</script>
+{% endblock %}
